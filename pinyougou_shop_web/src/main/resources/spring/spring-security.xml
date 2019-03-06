@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:security="http://www.springframework.org/schema/security"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:dubbo="http://code.alibabatech.com/schema/dubbo"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://code.alibabatech.com/schema/dubbo http://code.alibabatech.com/schema/dubbo/dubbo.xsd
+    http://www.springframework.org/schema/security          
+    http://www.springframework.org/schema/security/spring-security.xsd">
+    <!--静态资源放行-->
+    <security:http pattern="/css/**" security="none"/>
+    <security:http pattern="/img/**" security="none"/>
+    <security:http pattern="/js/**" security="none"/>
+    <security:http pattern="/plugins/**" security="none"/>
+    <security:http pattern="/shoplogin.html" security="none"/>
+    <security:http pattern="/register.html" security="none"/>
+    <security:http pattern="/seller/add.do" security="none"/>
+    <security:http use-expressions="false">
+        <security:intercept-url pattern="/**" access="ROLE_SELLER"/>
+        <!--配置登录表单-->
+        <security:form-login login-page="/shoplogin.html"
+                             always-use-default-target="true"
+                             default-target-url="/admin/index.html"
+                             authentication-failure-forward-url="/shoplogin.html"/>
+        <!--禁用跨站请求认证-->
+        <security:csrf disabled="true"/>
+        <!--放行iframe-->
+        <security:headers>
+            <security:frame-options policy="SAMEORIGIN"/>
+        </security:headers>
+        <security:logout/>
+    </security:http>
+    <!--认证管理-->
+    <security:authentication-manager>
+        <security:authentication-provider user-service-ref="userDetail">
+            <security:password-encoder ref="bCryptPasswordEncoder"/>
+        </security:authentication-provider>
+    </security:authentication-manager>
+    <!--用户提供-->
+    <bean id="userDetail" class="com.pinyougou.user.service.UserDetail">
+        <property name="sellerService" ref="sellerService"/>
+    </bean>
+    <!--配置密码加密-->
+    <bean class="org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder" id="bCryptPasswordEncoder"/>
+
+    <!-- 引用dubbo 服务 -->
+    <dubbo:application name="pinyougou_shop_web" />
+    <dubbo:registry address="zookeeper://192.168.25.136:2181"/>
+    <dubbo:reference interface="com.pinyougou.sellergoods.service.SellerService" id="sellerService"/>
+
+
+</beans>
